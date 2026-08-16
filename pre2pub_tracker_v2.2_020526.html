@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre2Pub Retraction Tracker v2.2</title>
+    <style>
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8; --primary-light: #dbeafe;
+            --success: #16a34a; --success-light: #dcfce7;
+            --warning: #ca8a04; --warning-light: #fef3c7;
+            --danger: #dc2626; --danger-light: #fee2e2;
+            --purple: #7c3aed; --purple-light: #f3e8ff;
+            --pink: #db2777; --pink-light: #fce7f3;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: var(--gray-900); background: var(--gray-50); padding: 1rem; max-width: 1900px; margin: 0 auto; font-size: 14px; }
+        h1 { font-size: 1.3rem; font-weight: 700; }
+        h2 { font-size: 0.9rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        h2 .help { cursor: help; color: var(--gray-400); font-size: 0.8rem; }
+        .subtitle { color: var(--gray-500); font-size: 0.8rem; margin-bottom: 1rem; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem; margin-bottom: 0.75rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+        @media (max-width: 1000px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .grid-2, .grid-4 { grid-template-columns: 1fr; } }
+        
+        /* Form elements */
+        label { display: block; font-weight: 500; font-size: 0.75rem; margin-bottom: 0.2rem; color: var(--gray-700); }
+        .label-hint { font-weight: 400; color: var(--gray-500); font-size: 0.7rem; }
+        input[type="file"], input[type="number"], input[type="email"] { width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; }
+        .file-status { font-size: 0.7rem; margin-top: 0.15rem; color: var(--gray-500); }
+        .file-status.loaded { color: var(--success); font-weight: 500; }
+        .file-status.error { color: var(--danger); }
+        
+        /* Buttons */
+        button { padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 500; font-size: 0.75rem; cursor: pointer; border: none; transition: all 0.15s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
+        .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+        .btn-success { background: var(--success); color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        
+        /* Progress */
+        .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; margin: 0.5rem 0; }
+        .progress-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+        .progress-text { font-size: 0.75rem; color: var(--gray-500); }
+        
+        /* Stats cards - clickable */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.5rem; margin: 0.5rem 0; }
+        .stat-box { 
+            background: var(--gray-50); padding: 0.5rem; border-radius: 6px; text-align: center; 
+            cursor: pointer; border: 2px solid transparent; transition: all 0.15s;
+        }
+        .stat-box:hover { border-color: var(--primary); background: var(--primary-light); }
+        .stat-box.active { border-color: var(--primary); background: var(--primary-light); }
+        .stat-box.disabled { cursor: default; opacity: 0.6; }
+        .stat-box.disabled:hover { border-color: transparent; background: var(--gray-50); }
+        .stat-value { font-size: 1.2rem; font-weight: 700; }
+        .stat-value .stat-pct { font-size: 0.7rem; font-weight: 500; color: var(--gray-500); }
+        .stat-label { font-size: 0.6rem; color: var(--gray-500); text-transform: uppercase; }
+        
+        /* Method badges - clickable */
+        .method-grid { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0; }
+        .method-box {
+            display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.6rem;
+            border-radius: 4px; font-size: 0.7rem; cursor: pointer; border: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .method-box:hover { transform: scale(1.02); }
+        .method-box.active { border-color: var(--gray-900); }
+        .method-box .count { font-weight: 700; }
+        .method-box .stat-pct { font-size: 0.65rem; font-weight: 500; opacity: 0.7; }
+        .method-a { background: var(--primary-light); color: #1e40af; }
+        .method-b { background: var(--success-light); color: #166534; }
+        .method-c { background: var(--warning-light); color: #92400e; }
+        .method-d { background: var(--pink-light); color: #9d174d; }
+        .method-e { background: var(--purple-light); color: var(--purple); }
+        .method-f { background: #e0f2fe; color: #0369a1; }
+        
+        /* Tooltips */
+        .tooltip { position: relative; }
+        .tooltip::after {
+            content: attr(data-tip);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--gray-900); color: white; padding: 0.4rem 0.6rem;
+            border-radius: 4px; font-size: 0.65rem; white-space: pre-line; max-width: 280px;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 100;
+            text-align: left; line-height: 1.4;
+        }
+        .tooltip:hover::after { opacity: 1; }
+        
+        /* Log */
+        .log-container { max-height: 120px; overflow-y: auto; background: var(--gray-900); color: #10b981; font-family: monospace; font-size: 0.65rem; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+        .log-entry { margin-bottom: 0.1rem; }
+        .log-entry.error { color: #f87171; } .log-entry.success { color: #34d399; }
+        .log-entry.warn { color: #fbbf24; } .log-entry.info { color: #60a5fa; }
+        
+        /* Results table */
+        .results-container { max-height: 500px; overflow: auto; border: 1px solid var(--gray-200); border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        th, td { padding: 0.4rem 0.5rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
+        th { background: var(--gray-50); font-weight: 600; position: sticky; top: 0; z-index: 1; white-space: nowrap; }
+        tr.hidden-row { display: none; }
+        tr:hover { background: var(--gray-50); }
+        
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.6rem; font-weight: 500; cursor: default; }
+        .badge-a { background: var(--primary-light); color: #1e40af; }
+        .badge-b { background: var(--success-light); color: #166534; }
+        .badge-c { background: var(--warning-light); color: #92400e; }
+        .badge-d { background: var(--pink-light); color: #9d174d; }
+        .badge-e { background: var(--purple-light); color: var(--purple); }
+        .badge-f { background: #e0f2fe; color: #0369a1; }
+        .badge-success { background: var(--success-light); color: #166534; }
+        .badge-warning { background: var(--warning-light); color: #92400e; }
+        .badge-danger { background: var(--danger-light); color: #991b1b; }
+        .badge-gray { background: var(--gray-100); color: var(--gray-700); }
+        .badge-pps { background: #fef3c7; color: #92400e; font-size: 0.5rem; padding: 0.1rem 0.2rem; margin-left: 0.2rem; }
+        
+        /* DOI links and lists */
+        .doi-link { color: var(--primary); text-decoration: none; font-family: monospace; font-size: 0.65rem; }
+        .doi-link:hover { text-decoration: underline; }
+        .doi-list { max-height: 0; overflow: hidden; transition: max-height 0.3s; }
+        .doi-list.expanded { max-height: 200px; overflow-y: auto; }
+        .doi-item { padding: 0.2rem 0; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 0.3rem; }
+        .doi-item:last-child { border-bottom: none; }
+        .expand-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.65rem; padding: 0.2rem; }
+        .expand-btn:hover { text-decoration: underline; }
+        
+        /* Discrepancy indicators */
+        .discrepancy { display: inline-flex; align-items: center; gap: 0.2rem; }
+        .discrepancy-icon { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 700; }
+        .disc-match { background: var(--success-light); color: #166534; }
+        .disc-mismatch { background: var(--danger-light); color: #991b1b; }
+        .disc-unknown { background: var(--gray-100); color: var(--gray-500); }
+        
+        /* Filter indicator */
+        .filter-active { background: var(--primary-light); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 0.5rem; }
+        .filter-active .clear { cursor: pointer; color: var(--danger); font-weight: 700; }
+        
+        /* Legend */
+        .legend { background: var(--gray-50); padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; }
+        .legend h3 { font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--gray-700); }
+        .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; font-size: 0.65rem; }
+        .legend-item { display: flex; align-items: flex-start; gap: 0.4rem; }
+        .legend-item strong { color: var(--gray-700); }
+        
+        .hidden { display: none; }
+        .truncate { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Pre2Pub Retraction Tracker v2.2</h1>
+    <p class="subtitle">Track preprints citing retracted references → check if corrections made in journal publications</p>
+    
+    <!-- Usage Modes -->
+    <div class="card" style="background: #f8fafc; border-left: 3px solid var(--gray-400); font-size: 0.85rem; padding: 0.75rem 1rem;">
+        <strong>Two usage modes:</strong>
+        <div style="margin-top: 0.4rem">
+            <strong>① Basic — Preprint-to-publication linking:</strong> Upload any CSV with preprint DOIs (column named <code>DOI</code>, optionally <code>Title</code>). The tool will find corresponding journal publications using Methods A–F. No other files needed.
+        </div>
+        <div style="margin-top: 0.3rem">
+            <strong>② Full — Retraction tracking:</strong> Upload preprints from the <a href="https://dbrech.irit.fr/pls/apex/f?p=9999:31" target="_blank">Feet of Clay</a> detector (which cites retracted references) along with Retraction Watch data. The tool will link preprints to publications AND check whether retracted references were corrected.
+        </div>
+    </div>
+    
+    <!-- Single DOI Checker -->
+    <div class="card" style="background: var(--primary-light); border-left: 3px solid var(--primary);">
+        <h2>🔍 Quick DOI Check <span class="label-hint">(test a single preprint)</span></h2>
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label>Preprint DOI</label>
+                <input type="text" id="singleDoi" placeholder="e.g., 10.1101/2024.01.15.123456" style="width: 100%;">
+            </div>
+            <button class="btn-primary" id="checkDoiBtn">Check DOI</button>
+        </div>
+        <div id="singleDoiResult" style="margin-top: 0.75rem; display: none;">
+            <div style="background: white; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem;">
+                <div id="singleDoiOutput"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Input Section -->
+    <div class="card">
+        <h2>📁 Input Files</h2>
+        <div class="grid-4">
+            <div>
+                <label>Preprints CSV <span class="label-hint">(required — any CSV with DOI column)</span></label>
+                <input type="file" id="preprintsFile" accept=".csv">
+                <div class="file-status" id="preprintsStatus">No file loaded</div>
+            </div>
+            <div>
+                <label>Feet of Clay Articles CSV <span class="label-hint">(optional — for cross-check)</span></label>
+                <input type="file" id="ppsFile" accept=".csv">
+                <div class="file-status" id="ppsStatus">No file loaded</div>
+            </div>
+            <div>
+                <label>Retraction Watch CSV <span class="label-hint">(optional — for retraction checks)</span></label>
+                <input type="file" id="rwFile" accept=".csv">
+                <div class="file-status" id="rwStatus">No file loaded</div>
+            </div>
+            <div>
+                <label>PubPeer Batch CSV <span class="label-hint">(optional)</span></label>
+                <input type="file" id="pubpeerFile" accept=".csv">
+                <div class="file-status" id="pubpeerStatus">No file loaded</div>
+            </div>
+        </div>
+        <div class="grid-2" style="margin-top:0.5rem">
+            <div><label>Batch Size</label><input type="number" id="batchSize" value="25" min="1" max="200"></div>
+            <div><label>Email (for API polite pool)</label><input type="email" id="userEmail" value="researcher@example.com"></div>
+        </div>
+        <div class="btn-group">
+            <button class="btn-primary" id="runBtn" disabled>▶ Run Pipeline</button>
+            <button class="btn-secondary" id="nextBatchBtn" disabled>Next Batch →</button>
+            <button class="btn-secondary" id="stopBtn" disabled>⏹ Stop</button>
+            <button class="btn-secondary" id="saveBtn" disabled>💾 Save Progress</button>
+            <button class="btn-secondary" id="loadBtn">📂 Load Progress</button>
+            <input type="file" id="progressFile" accept=".json" class="hidden">
+        </div>
+    </div>
+    
+    <!-- Progress & Stats -->
+    <div class="card">
+        <h2>📊 Dashboard <span class="help tooltip" data-tip="Click any card or method to filter the results table below">ⓘ</span></h2>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-text" id="progressText">Ready to start</div>
+        
+        <h2 style="margin-top:0.75rem">Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-box disabled"><div class="stat-value" id="statProcessed">0</div><div class="stat-label">Processed</div></div>
+            <div class="stat-box tooltip" data-filter="published" data-tip="Click to show only preprints where a journal publication was found"><div class="stat-value" id="statPublished">0</div><div class="stat-label">Published Found</div></div>
+            <div class="stat-box tooltip" data-filter="not_published" data-tip="Preprints with no journal publication found (yet)"><div class="stat-value" id="statNotPublished">0</div><div class="stat-label">Not Published</div></div>
+        </div>
+        
+        <h2 style="margin-top:0.75rem">Reference Status <span class="help tooltip" data-tip="Did the journal article still cite the retracted reference(s)?&#10;&#10;Data source: Crossref API (primary), OpenAlex API (fallback)&#10;&#10;• Still Cited: All RW-confirmed refs still in reference list&#10;• Partial: Some refs removed, some remain&#10;• Corrected: All RW refs removed from reference list&#10;• No Refs: No reference data from Crossref or OpenAlex&#10;• Via OpenAlex: Refs found via OpenAlex fallback (Crossref had none)">ⓘ</span></h2>
+        <div class="stats-grid">
+            <div class="stat-box tooltip" data-filter="still_cited" data-tip="Journal article still cites ALL the retracted references" style="border-left: 3px solid var(--danger)"><div class="stat-value" id="statStillCited">0</div><div class="stat-label">Still Cited</div></div>
+            <div class="stat-box tooltip" data-filter="partial" data-tip="Some retracted refs removed, but some still cited" style="border-left: 3px solid var(--warning)"><div class="stat-value" id="statPartial">0</div><div class="stat-label">Partial</div></div>
+            <div class="stat-box tooltip" data-filter="corrected" data-tip="All RW-confirmed retracted refs were removed ✓" style="border-left: 3px solid var(--success)"><div class="stat-value" id="statCorrected">0</div><div class="stat-label">Corrected</div></div>
+            <div class="stat-box tooltip" data-filter="no_refs" data-tip="No reference list from Crossref or OpenAlex" style="border-left: 3px solid var(--gray-300)"><div class="stat-value" id="statNoRefs">0</div><div class="stat-label">No Refs Data</div></div>
+            <div class="stat-box tooltip" data-filter="refs_openalex" data-tip="Reference data retrieved from OpenAlex (Crossref had no refs)&#10;OpenAlex parses PDFs for broader coverage" style="border-left: 3px solid #0369a1"><div class="stat-value" id="statOpenAlex">0</div><div class="stat-label">Via OpenAlex</div></div>
+        </div>
+        
+        <h2 style="margin-top:0.75rem">Feet of Clay Cross-Check <span class="help tooltip" data-tip="Compare ref check with Feet of Clay journal articles database&#10;(only shown when FoC articles CSV is loaded)&#10;&#10;• In FoC: Journal DOI found in FoC database (still flagged)&#10;• Not in FoC: Journal DOI not in FoC database&#10;• Discrepancy analysis helps identify potential issues">ⓘ</span></h2>
+        <div class="stats-grid">
+            <div class="stat-box tooltip" data-filter="in_pps_yes" data-tip="Journal article IS in Feet of Clay database (still has problems)" style="border-left: 3px solid var(--warning)"><div class="stat-value" id="statInPPS">0</div><div class="stat-label">In FoC</div></div>
+            <div class="stat-box tooltip" data-filter="in_pps_no" data-tip="Journal article NOT in Feet of Clay database" style="border-left: 3px solid var(--gray-300)"><div class="stat-value" id="statNotInPPS">0</div><div class="stat-label">Not in FoC</div></div>
+            <div class="stat-box tooltip" data-filter="disc_match" data-tip="Crossref & FoC agree (both say problem or both say OK)" style="border-left: 3px solid var(--success)"><div class="stat-value" id="statDiscMatch">0</div><div class="stat-label">Match</div></div>
+            <div class="stat-box tooltip" data-filter="disc_mismatch" data-tip="Crossref & FoC disagree — investigate these!&#10;Could indicate: false positive link, new refs added, or FoC delay" style="border-left: 3px solid var(--danger)"><div class="stat-value" id="statDiscMismatch">0</div><div class="stat-label">Mismatch ⚠</div></div>
+        </div>
+        
+        <h2 style="margin-top:0.75rem">Author Overlap <span class="help tooltip" data-tip="Compare author lists between preprint and journal article&#10;&#10;Data source: Crossref API (author metadata)&#10;&#10;Matching: Same last name + at least one shared initial&#10;(if initials missing, matches on last name only → flagged as uncertain)&#10;&#10;Overlap ratio = matched / max(prep, jour) × 100&#10;Penalizes both missing authors and extra authors&#10;&#10;Categories:&#10;• Same: Identical authors&#10;• Added: All preprint authors found + new ones&#10;• Removed: Some preprint authors missing&#10;• Changed: Mix of additions and removals&#10;• No Overlap: Zero matches — likely wrong link!">ⓘ</span></h2>
+        <div class="stats-grid">
+            <div class="stat-box tooltip" data-filter="author_same" data-tip="Identical author list"><div class="stat-value" id="statAuthorSame">0</div><div class="stat-label">Same</div></div>
+            <div class="stat-box tooltip" data-filter="author_added" data-tip="All preprint authors present + new ones added"><div class="stat-value" id="statAuthorAdded">0</div><div class="stat-label">Added</div></div>
+            <div class="stat-box tooltip" data-filter="author_changed" data-tip="Some authors added AND removed"><div class="stat-value" id="statAuthorChanged">0</div><div class="stat-label">Changed</div></div>
+            <div class="stat-box tooltip" data-filter="author_no_overlap" data-tip="⚠ ZERO authors in common!&#10;Likely wrong link or paper mill activity — verify manually!" style="border-left: 3px solid var(--danger)"><div class="stat-value" id="statAuthorNoOverlap">0</div><div class="stat-label">No Overlap ⚠</div></div>
+            <div class="stat-box tooltip" data-filter="author_uncertain" data-tip="Some author matches based on last name only&#10;(one or both sides missing initials in Crossref metadata)" style="border-left: 3px solid var(--purple)"><div class="stat-value" id="statAuthorUncertain">0</div><div class="stat-label">Uncertain ?</div></div>
+        </div>
+        
+        <h2 style="margin-top:0.75rem">Linking Method <span class="help tooltip" data-tip="How the journal article was found:&#10;&#10;A — bioRxiv/medRxiv API: Ground truth&#10;B — Crossref relations: Ground truth&#10;C — PubMed (Pre2Pub): High reliability&#10;D — Cabanac: Medium reliability&#10;E — Title-only: Verify ALL&#10;F — Europe PMC: Curated links">ⓘ</span></h2>
+        <div class="method-grid">
+            <div class="method-box method-a tooltip" data-filter="method_a" data-tip="bioRxiv/medRxiv API — Ground truth&#10;The preprint server itself reports this link"><span class="badge badge-a">A</span> bioRxiv API <span class="count" id="methodA">0</span></div>
+            <div class="method-box method-b tooltip" data-filter="method_b" data-tip="Crossref relations — Ground truth&#10;Publisher registered is-preprint-of relation"><span class="badge badge-b">B</span> Crossref Rel <span class="count" id="methodB">0</span></div>
+            <div class="method-box method-c tooltip" data-filter="method_c" data-tip="Pre2Pub algorithm (Langnickel et al. 2022)&#10;&#10;1. Title search in PubMed (max 5 results)&#10;2. Author matching (Levenshtein >0.9):&#10;   • More matched than unmatched pairs, OR&#10;   • First 3 authors identical, OR&#10;   • First AND last at same positions, OR&#10;   • First AND last found anywhere in list&#10;&#10;Fallback: Author search → title Jaccard ≥0.80"><span class="badge badge-c">C</span> PubMed <span class="count" id="methodC">0</span></div>
+            <div class="method-box method-d tooltip" data-filter="method_d" data-tip="Cabanac algorithm (Cabanac et al. 2021, Scientometrics)&#10;&#10;Crossref search: title + first author (max 10 results)&#10;&#10;High confidence (D-hi): Jaccard ≥0.80 alone&#10;&#10;Low confidence (D-lo): Jaccard 0.25–0.80 +&#10;first author match via ORCID or family name&#10;(paper used ≥0.10; raised to 0.25 for precision)"><span class="badge badge-d">D</span> Cabanac <span class="count" id="methodD">0</span></div>
+            <div class="method-box method-e tooltip" data-filter="method_e" data-tip="Title-only fallback — lowest confidence&#10;Jaccard ≥0.85 but no author verification&#10;⚠ Verify ALL these matches manually!"><span class="badge badge-e">E</span> Title-only <span class="count" id="methodE">0</span></div>
+            <div class="method-box method-f tooltip" data-filter="method_f" data-tip="Europe PMC curated links&#10;&#10;Preprint-publication links from Europe PMC database&#10;High reliability — manually curated by Europe PMC"><span class="badge badge-f">F</span> Europe PMC <span class="count" id="methodF">0</span></div>
+        </div>
+        
+        <h2 style="margin-top:0.75rem">Retraction Timeline <span class="help tooltip" data-tip="When was the cited reference retracted relative to preprint/publication?&#10;&#10;Data sources:&#10;• Retraction dates: Retraction Watch CSV&#10;• Preprint/publication dates: Crossref API&#10;&#10;• Before preprint: Authors should have known&#10;• Between preprint & publication: Opportunity to correct&#10;• After publication: Not authors' fault">ⓘ</span></h2>
+        <div class="stats-grid">
+            <div class="stat-box tooltip" data-filter="timeline_before_prep" data-tip="Reference retracted BEFORE the preprint was posted" style="border-left: 3px solid var(--danger)"><div class="stat-value" id="statTimelineBeforePrep">0</div><div class="stat-label">Before Preprint</div></div>
+            <div class="stat-box tooltip" data-filter="timeline_between" data-tip="Reference retracted between preprint posting and journal publication" style="border-left: 3px solid var(--warning)"><div class="stat-value" id="statTimelineBetween">0</div><div class="stat-label">Between Prep & Pub</div></div>
+            <div class="stat-box tooltip" data-filter="timeline_after_pub" data-tip="Reference retracted after journal publication — not authors' fault" style="border-left: 3px solid var(--gray-300)"><div class="stat-value" id="statTimelineAfterPub">0</div><div class="stat-label">After Publication</div></div>
+            <div class="stat-box tooltip" data-filter="timeline_ambiguous" data-tip="Year-only date precision and same year — cannot determine if before/after" style="border-left: 3px solid var(--purple)"><div class="stat-value" id="statTimelineAmbiguous">0</div><div class="stat-label">Ambiguous ⚠</div></div>
+            <div class="stat-box tooltip" data-filter="timeline_same_month" data-tip="Retraction occurred same month as preprint or publication — classified but imprecise" style="border-left: 3px solid var(--gray-300)"><div class="stat-value" id="statTimelineSameMonth">0</div><div class="stat-label">Same Month</div></div>
+        </div>
+        
+        <div class="log-container" id="logContainer"><div class="log-entry info">Ready. Load a preprints CSV (with DOI column) and click "Run Pipeline".</div></div>
+    </div>
+    
+    <!-- Results -->
+    <div class="card">
+        <h2>📋 Results</h2>
+        <div class="btn-group" style="margin-bottom:0.5rem">
+            <button class="btn-success" id="exportCsvBtn" disabled>📥 Export Full CSV</button>
+            <button class="btn-secondary" id="exportFilteredBtn" disabled>📥 Export Filtered</button>
+            <button class="btn-secondary" id="exportReportBtn" disabled>📄 Summary Report</button>
+        </div>
+        
+        <div id="filterIndicator" class="filter-active hidden">
+            Showing: <strong id="filterLabel"></strong> (<span id="filterCount"></span> rows)
+            <span class="clear" id="clearFilter">✕ Clear</span>
+        </div>
+        
+        <div class="results-container">
+            <table>
+                <thead><tr>
+                    <th>#</th>
+                    <th>Preprint DOI</th>
+                    <th>Title</th>
+                    <th>Problematic Refs</th>
+                    <th>Journal DOI</th>
+                    <th>Method</th>
+                    <th>Ref Status</th>
+                    <th>Timeline</th>
+                    <th>Authors</th>
+                    <th>FoC Check</th>
+                    <th>Lag (days)</th>
+                </tr></thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <h3>📖 Legend & Terminology</h3>
+            <div class="legend-grid">
+                <div class="legend-item"><span class="badge badge-a">A</span> <div><strong>bioRxiv API</strong> — Ground truth link from preprint server</div></div>
+                <div class="legend-item"><span class="badge badge-b">B</span> <div><strong>Crossref Relations</strong> — Ground truth from publisher metadata</div></div>
+                <div class="legend-item"><span class="badge badge-c">C</span> <div><strong>PubMed/Pre2Pub</strong> — Title search + author matching per Langnickel 2022 (4 criteria)</div></div>
+                <div class="legend-item"><span class="badge badge-d">D</span> <div><strong>Cabanac</strong> — Crossref search (Cabanac 2021). Hi: Jaccard≥0.80. Lo: 0.25–0.80 + ORCID/name match</div></div>
+                <div class="legend-item"><span class="badge badge-e">E</span> <div><strong>Title-only</strong> — Fallback, needs manual verification</div></div>
+                <div class="legend-item"><span class="badge badge-f">F</span> <div><strong>Europe PMC</strong> — Curated preprint-publication links from Europe PMC</div></div>
+                <div class="legend-item"><span class="badge badge-pps">FoC</span> <div><strong>FoC-only flag</strong> — DOI flagged by Feet of Clay but not in Retraction Watch (may be EoC, tortured phrases, etc.)</div></div>
+                <div class="legend-item"><span class="badge badge-danger">Still</span> <div><strong>Still Cited</strong> — Journal article still cites retracted ref(s)</div></div>
+                <div class="legend-item"><span class="badge badge-success">Fixed</span> <div><strong>Corrected</strong> — Retracted refs removed from journal article</div></div>
+                <div class="legend-item"><span class="badge badge-danger">Pre-prep</span> <div><strong>Before Preprint</strong> — Ref retracted before preprint posted</div></div>
+                <div class="legend-item"><span class="badge badge-danger">~Prep</span> <div><strong>Around Preprint</strong> — Same month as preprint (month-level precision only)</div></div>
+                <div class="legend-item"><span class="badge badge-warning">Between</span> <div><strong>Between</strong> — Ref retracted between preprint and publication</div></div>
+                <div class="legend-item"><span class="badge badge-e">Ambig</span> <div><strong>Ambiguous</strong> — Year-only precision, same year — cannot determine timing</div></div>
+                <div class="legend-item"><span class="badge badge-gray">~mo</span> <div><strong>Same Month</strong> — Additional marker indicating month-level precision</div></div>
+            </div>
+            
+            <h3 style="margin-top:1rem">🔌 Data Sources</h3>
+            <div class="legend-grid" style="grid-template-columns: 1fr;">
+                <div class="legend-item" style="grid-column: 1/-1"><div>
+                    <strong>Metadata (authors, dates, titles)</strong> — Retrieved from <a href="https://www.crossref.org/" target="_blank">Crossref API</a> for both preprints and journal articles. Author names are normalized (lowercase, non-letters removed) and matched using last name + initials overlap.
+                </div></div>
+                <div class="legend-item" style="grid-column: 1/-1"><div>
+                    <strong>Reference lists</strong> — Primary: <a href="https://www.crossref.org/" target="_blank">Crossref API</a> (publisher-deposited). Fallback: <a href="https://openalex.org/" target="_blank">OpenAlex API</a> when Crossref has no refs (OpenAlex extracts refs from PDFs). The <code>refs_source</code> column indicates which was used.
+                </div></div>
+                <div class="legend-item" style="grid-column: 1/-1"><div>
+                    <strong>Retraction data</strong> — From your uploaded Retraction Watch CSV. Dates used for timeline classification.
+                </div></div>
+                <div class="legend-item" style="grid-column: 1/-1"><div>
+                    <strong>Preprint-publication links</strong> — Methods A/B are ground truth (bioRxiv API, Crossref relations). Methods C-F use algorithmic matching with varying confidence levels.
+                </div></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Pre2Pub Retraction Tracker v2.2 - Interactive Dashboard
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CROSSREF_BASE = 'https://api.crossref.org';
+const BIORXIV_BASE = 'https://api.biorxiv.org';
+const PUBMED_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const PREPRINT_PREFIXES = ['10.1101/', '10.21203/', '10.2139/', '10.20944/', '10.31219/', '10.31234/'];
+const STOPWORDS = new Set(['a','an','the','and','or','of','in','to','for','on','at','by','with','from','as','is','are','was','were','be','been','being','that','this','it','its','have','has','had','not','but','if','do','does','did']);
+
+// State
+let state = {
+    preprints: [], ppsIndex: new Map(), rwIndex: new Map(), pubpeerIndex: new Map(),
+    results: [], currentIndex: 0, isRunning: false, shouldStop: false, cache: new Map(),
+    methodCounts: {a:0, b:0, c:0, d:0, e:0, f:0}, currentFilter: null
+};
+
+// DOM
+const $ = id => document.getElementById(id);
+
+// ─── CSV Parser ─────────────────────────────────────────────────────────────
+function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const rows = []; let row = [], cell = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i], next = text[i+1];
+        if (inQuotes) {
+            if (ch === '"' && next === '"') { cell += '"'; i++; }
+            else if (ch === '"') inQuotes = false;
+            else cell += ch;
+        } else {
+            if (ch === '"') inQuotes = true;
+            else if (ch === ',') { row.push(cell); cell = ''; }
+            else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+                row.push(cell); if (row.some(c => c.trim())) rows.push(row);
+                row = []; cell = ''; if (ch === '\r') i++;
+            } else if (ch !== '\r') cell += ch;
+        }
+    }
+    if (cell || row.length) { row.push(cell); if (row.some(c => c.trim())) rows.push(row); }
+    if (rows.length < 2) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(r => { const obj = {}; headers.forEach((h,i) => obj[h] = (r[i]||'').trim()); return obj; });
+}
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+function log(msg, type='info') {
+    const el = document.createElement('div');
+    el.className = `log-entry ${type}`;
+    el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    $('logContainer').appendChild(el);
+    $('logContainer').scrollTop = $('logContainer').scrollHeight;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function removeStopwords(t) {
+    return (t||'').toLowerCase().normalize('NFKD').replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 1 && !STOPWORDS.has(w)).join(' ');
+}
+function jaccard(a,b) {
+    const sa = new Set(removeStopwords(a).split(/\s+/).filter(w=>w));
+    const sb = new Set(removeStopwords(b).split(/\s+/).filter(w=>w));
+    if (!sa.size || !sb.size) return 0;
+    return [...sa].filter(x => sb.has(x)).length / (sa.size + sb.size - [...sa].filter(x => sb.has(x)).length);
+}
+function levenshteinRatio(a,b) {
+    a = (a||'').toLowerCase(); b = (b||'').toLowerCase();
+    if (!a && !b) return 1; if (!a || !b) return 0;
+    const dp = Array.from({length: b.length+1}, (_,i) => i);
+    for (let i = 1; i <= a.length; i++) {
+        let prev = dp[0]; dp[0] = i;
+        for (let j = 1; j <= b.length; j++) { const tmp = dp[j]; dp[j] = a[i-1]===b[j-1] ? prev : 1+Math.min(prev, dp[j], dp[j-1]); prev = tmp; }
+    }
+    return 1 - dp[b.length] / Math.max(a.length, b.length);
+}
+function isPreprintDoi(d) { return PREPRINT_PREFIXES.some(p => (d||'').toLowerCase().startsWith(p)); }
+function parseRwDate(s) { const m = (s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}` : ''; }
+function extractCrossrefDate(msg, isJ=false) {
+    if (!msg) return '';
+    for (const f of (isJ ? ['published-print','published-online','issued'] : ['posted','published-print','published-online','issued'])) {
+        const dp = msg[f]?.['date-parts']?.[0];
+        if (dp?.length) return dp.length >= 3 ? `${dp[0]}-${String(dp[1]).padStart(2,'0')}-${String(dp[2]).padStart(2,'0')}` : dp.length === 2 ? `${dp[0]}-${String(dp[1]).padStart(2,'0')}` : `${dp[0]}`;
+    }
+    return '';
+}
+
+// ─── API Functions ──────────────────────────────────────────────────────────
+async function fetchJson(url, retries=3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const r = await fetch(url);
+            if (r.status === 429) { await sleep(2000); continue; }
+            if (r.status >= 500) { await sleep(1000*(i+1)); continue; }
+            if (!r.ok) return null;
+            return await r.json();
+        } catch(e) { await sleep(1000); }
+    }
+    return null;
+}
+
+async function crossrefGet(doi) {
+    doi = (doi||'').toLowerCase().trim(); if (!doi) return null;
+    const key = `cr:${doi}`;
+    if (state.cache.has(key)) return state.cache.get(key);
+    await sleep(350);
+    const data = await fetchJson(`${CROSSREF_BASE}/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent($('userEmail').value)}`);
+    const result = data?.status === 'ok' ? data.message : null;
+    state.cache.set(key, result);
+    return result;
+}
+
+function extractAuthorsCrossref(list) {
+    const result = [];
+    for (const a of (list||[])) {
+        let last = '', first = '';
+        if (a.family?.trim()) { last = a.family.trim(); first = a.given?.trim() || ''; }
+        else if (a.name?.trim()) { const n = a.name.trim(); if (n.includes(',')) [last, first] = n.split(',').map(s=>s.trim()); else { const p = n.split(/\s+/); last = p.pop()||''; first = p.join(' '); } }
+        if (last.includes(' ')) { const p = last.split(/\s+/); if (p[p.length-1].length === 1) { last = p[0]; first = p.slice(1).join(' ') + (first ? ' '+first : ''); } else { first = p.slice(0,-1).join(' ') + (first ? ' '+first : ''); last = p[p.length-1]; } }
+        const lastNorm = last.toLowerCase().replace(/[^a-z]/g, '');
+        const initials = first.split(/\s+/).map(w => w[0]||'').join('').toLowerCase();
+        if (lastNorm) result.push({last: lastNorm, initials});
+    }
+    return result;
+}
+
+function authorOverlapCategory(prep, jour) {
+    // Returns object with category, counts, and flags
+    const result = {
+        category: 'no_data',
+        prep_count: prep?.length || 0,
+        jour_count: jour?.length || 0,
+        matched_count: 0,
+        overlap_ratio: 0,
+        uncertain_matches: 0,  // Matches based on last name only (no initials to compare)
+        note: ''
+    };
+    
+    if (!prep?.length || !jour?.length) return result;
+    
+    const used = new Set();
+    let matched = 0;
+    let uncertainMatches = 0;
+    
+    for (const a of prep) {
+        for (let i = 0; i < jour.length; i++) {
+            if (used.has(i)) continue;
+            if (a.last !== jour[i].last || !a.last) continue;
+            
+            // Check initials
+            const bothHaveInitials = a.initials && jour[i].initials;
+            const eitherMissingInitials = !a.initials || !jour[i].initials;
+            
+            if (bothHaveInitials) {
+                // Both have initials: require at least one overlap
+                const hasOverlap = [...a.initials].some(c => jour[i].initials.includes(c));
+                if (!hasOverlap) continue;  // Same last name but different initials - not a match
+            } else if (eitherMissingInitials) {
+                // One or both missing initials: match on last name but flag as uncertain
+                uncertainMatches++;
+            }
+            
+            matched++;
+            used.add(i);
+            break;
+        }
+    }
+    
+    result.matched_count = matched;
+    result.uncertain_matches = uncertainMatches;
+    
+    // Calculate overlap ratio: matched / max(prep, jour)
+    // This penalizes both missing authors and extra authors
+    const maxCount = Math.max(prep.length, jour.length);
+    result.overlap_ratio = maxCount > 0 ? Math.round((matched / maxCount) * 100) : 0;
+    
+    // Determine category
+    const unmatched = prep.length - matched;
+    const added = jour.length - used.size;
+    
+    if (matched === 0) {
+        result.category = 'no_overlap';
+    } else if (unmatched === 0 && added === 0) {
+        result.category = 'same';
+    } else if (unmatched === 0) {
+        result.category = 'added';
+    } else if (added === 0) {
+        result.category = 'removed';
+    } else {
+        result.category = 'changed';
+    }
+    
+    // Build note
+    const notes = [];
+    if (uncertainMatches > 0) {
+        notes.push(`${uncertainMatches} matched by last name only (no initials)`);
+    }
+    if (unmatched > 0) {
+        notes.push(`${unmatched} preprint author(s) not found`);
+    }
+    if (added > 0) {
+        notes.push(`${added} new author(s) in journal`);
+    }
+    result.note = notes.join('; ');
+    
+    return result;
+}
+
+// ─── Linking Methods ────────────────────────────────────────────────────────
+async function methodA(doi) {
+    if (!doi?.startsWith('10.1101/')) return null;
+    await sleep(250);
+    for (const srv of ['biorxiv','medrxiv']) {
+        const data = await fetchJson(`${BIORXIV_BASE}/details/${srv}/${doi}/na/json`);
+        for (const c of (data?.collection||[])) if (c.published && c.published !== 'NA') return c.published.toLowerCase().trim();
+    }
+    return null;
+}
+
+function methodB(msg) {
+    if (!msg) return null;
+    for (const rt of ['is-preprint-of','update-to']) for (const rel of (msg.relation?.[rt]||[])) if (rel.id && !isPreprintDoi(rel.id)) return rel.id.toLowerCase().trim();
+    return null;
+}
+
+async function methodC(title, authors, prepYear) {
+    const clean = removeStopwords(title); if (!clean) return null;
+    await sleep(350);
+    const email = $('userEmail').value;
+    let data = await fetchJson(`${PUBMED_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(clean)}&retmax=5&retmode=json&tool=pre2pub&email=${encodeURIComponent(email)}`);
+    let pmids = data?.esearchresult?.idlist || [], useTitleSim = false;
+    if (!pmids.length && authors?.length) {
+        await sleep(350);
+        data = await fetchJson(`${PUBMED_BASE}/esearch.fcgi?db=pubmed&term="${encodeURIComponent(authors[0].last)}"[Author]&retmax=5&retmode=json&tool=pre2pub&email=${encodeURIComponent(email)}`);
+        pmids = data?.esearchresult?.idlist || []; useTitleSim = true;
+    }
+    for (const pmid of pmids) {
+        await sleep(350);
+        const sdata = await fetchJson(`${PUBMED_BASE}/esummary.fcgi?db=pubmed&id=${pmid}&retmode=json&tool=pre2pub&email=${encodeURIComponent(email)}`);
+        const rec = sdata?.result?.[pmid]; if (!rec) continue;
+        const doi = rec.articleids?.find(x => x.idtype === 'doi')?.value?.toLowerCase();
+        if (!doi || isPreprintDoi(doi)) continue;
+        const pubYear = (rec.pubdate||'').slice(0,4);
+        if (prepYear && pubYear && pubYear < prepYear) continue;
+        
+        if (useTitleSim) { 
+            // Fallback: author search → title similarity
+            if (jaccard(title, rec.title||'') >= 0.80) return doi; 
+        } else {
+            // Primary: title search → author matching (Pre2Pub criteria)
+            const pubAuthors = (rec.authors||[]).map(a => { 
+                const p = (a.name||'').trim().split(/\s+/); 
+                return {last: (p[0]||'').toLowerCase().replace('-',''), initials: p.slice(1).map(x => x[0]?.toLowerCase()||'').join('')}; 
+            });
+            
+            // Helper: check if author a matches any author in list using Levenshtein >0.9
+            const matchesAny = (a, list) => list.some(b => levenshteinRatio(a.last, b.last) > 0.9);
+            const matchesAt = (a, b) => levenshteinRatio(a.last, b.last) > 0.9;
+            
+            // Criterion 1: More matched than unmatched when iterating simultaneously
+            const minLen = Math.min(authors.length, pubAuthors.length);
+            let matched = 0, unmatched = 0;
+            for (let i = 0; i < minLen; i++) {
+                if (matchesAt(authors[i], pubAuthors[i])) matched++;
+                else unmatched++;
+            }
+            if (matched > unmatched) return doi;
+            
+            // Criterion 2: First 3 authors are the same (all must match)
+            const n = Math.min(3, authors.length, pubAuthors.length);
+            if (n >= 1) {
+                const first3Match = authors.slice(0, n).every((a, i) => matchesAt(a, pubAuthors[i]));
+                if (first3Match) return doi;
+            }
+            
+            // Criterion 3: First AND last author identical (at same positions)
+            if (authors.length >= 2 && pubAuthors.length >= 2) {
+                const firstMatch = matchesAt(authors[0], pubAuthors[0]);
+                const lastMatch = matchesAt(authors[authors.length-1], pubAuthors[pubAuthors.length-1]);
+                if (firstMatch && lastMatch) return doi;
+            }
+            
+            // Criterion 4: First AND last of preprint found ANYWHERE in journal list
+            if (authors.length >= 2 && pubAuthors.length >= 2) {
+                const firstFoundAnywhere = matchesAny(authors[0], pubAuthors);
+                const lastFoundAnywhere = matchesAny(authors[authors.length-1], pubAuthors);
+                if (firstFoundAnywhere && lastFoundAnywhere) return doi;
+            }
+        }
+    }
+    return null;
+}
+
+async function methodD(title, firstAuthor, prepYear, prepOrcid) {
+    await sleep(350);
+    const data = await fetchJson(`${CROSSREF_BASE}/works?query.bibliographic=${encodeURIComponent(`${title} ${firstAuthor}`.trim())}&filter=type:journal-article&rows=10&mailto=${encodeURIComponent($('userEmail').value)}`);
+    let bestDoi = null, bestSim = 0, bestConf = null;
+    
+    for (const item of (data?.message?.items||[])) {
+        const doi = (item.DOI||'').toLowerCase().trim(); 
+        if (!doi || isPreprintDoi(doi)) continue;
+        const pubYear = extractCrossrefDate(item).slice(0,4);
+        if (prepYear && pubYear && pubYear < prepYear) continue;
+        
+        const sim = jaccard(title, (item.title||[''])[0]);
+        
+        // High confidence: Jaccard ≥ 0.80 alone is sufficient (per Cabanac paper)
+        if (sim >= 0.80 && sim > bestSim) { 
+            bestDoi = doi; bestSim = sim; bestConf = 'high'; 
+        }
+        // Low confidence: Jaccard 0.25-0.80 + first author match
+        else if (sim >= 0.25 && bestConf !== 'high') {
+            const pubAuthors = item.author || [];
+            if (!pubAuthors.length) continue;
+            
+            // Try ORCID matching first (per Cabanac paper)
+            let authorMatch = false;
+            const pubFirstOrcid = pubAuthors[0]?.ORCID?.replace('http://orcid.org/', '').replace('https://orcid.org/', '');
+            if (prepOrcid && pubFirstOrcid && prepOrcid === pubFirstOrcid) {
+                authorMatch = true;
+            }
+            
+            // Fallback: family name + first 3 letters of given name (per Cabanac paper)
+            if (!authorMatch && firstAuthor) {
+                const pubFirst = pubAuthors[0];
+                const pubFamily = (pubFirst.family || '').toLowerCase().replace(/[-']/g, '');
+                const pubGiven3 = ((pubFirst.given || '').toLowerCase().replace(/[-']/g, '') + '   ').slice(0, 3);
+                
+                // We have firstAuthor as normalized last name from preprint
+                // Compare family names with some tolerance
+                if (pubFamily && levenshteinRatio(firstAuthor, pubFamily) > 0.85) {
+                    authorMatch = true;
+                }
+            }
+            
+            if (authorMatch && sim > bestSim) { 
+                bestDoi = doi; bestSim = sim; bestConf = 'low'; 
+            }
+        }
+    }
+    return {doi: bestDoi, confidence: bestConf};
+}
+
+async function methodE(title) {
+    await sleep(350);
+    const data = await fetchJson(`${CROSSREF_BASE}/works?query.title=${encodeURIComponent(title)}&filter=type:journal-article&rows=5&mailto=${encodeURIComponent($('userEmail').value)}`);
+    for (const item of (data?.message?.items||[])) {
+        const doi = (item.DOI||'').toLowerCase().trim();
+        if (doi && !isPreprintDoi(doi) && jaccard(title, (item.title||[''])[0]) >= 0.85) return doi;
+    }
+    return null;
+}
+
+async function methodF(preprintDoi) {
+    // Europe PMC preprint-publication links
+    if (!preprintDoi) return null;
+    await sleep(350);
+    const data = await fetchJson(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:${encodeURIComponent(preprintDoi)}&format=json&email=${encodeURIComponent($('userEmail').value)}`);
+    const results = data?.resultList?.result || [];
+    for (const r of results) {
+        // Look for publication link in the result
+        if (r.pubType === 'preprint' && r.commentCorrectionList?.commentCorrection) {
+            for (const link of r.commentCorrectionList.commentCorrection) {
+                if (link.type === 'Preprint of' && link.id) {
+                    // link.id might be PMID — need to get DOI
+                    const linkedDoi = link.doi?.toLowerCase().trim();
+                    if (linkedDoi && !isPreprintDoi(linkedDoi)) return linkedDoi;
+                    // If no DOI in link, try fetching by PMID
+                    if (link.source === 'MED' && link.id) {
+                        const pmidData = await fetchJson(`https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:${link.id}&format=json`);
+                        const pmidResult = pmidData?.resultList?.result?.[0];
+                        if (pmidResult?.doi && !isPreprintDoi(pmidResult.doi.toLowerCase())) {
+                            return pmidResult.doi.toLowerCase().trim();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Alternative: search for preprint DOI in full text links
+    for (const r of results) {
+        if (r.doi && r.doi.toLowerCase() !== preprintDoi.toLowerCase() && !isPreprintDoi(r.doi.toLowerCase())) {
+            return r.doi.toLowerCase().trim();
+        }
+    }
+    return null;
+}
+
+// ─── Ref Checking ───────────────────────────────────────────────────────────
+function checkRefList(msg, rwRefs) {
+    if (!rwRefs?.length) return {status: 'no_rw_refs', found: [], removed: []};
+    if (!msg) return {status: 'no_refs', found: [], removed: []};
+    const refDois = new Set((msg.reference||[]).map(r => (r.DOI||'').toLowerCase().trim()).filter(d => d));
+    if (!refDois.size) return {status: 'no_refs', found: [], removed: []};
+    const found = rwRefs.filter(r => refDois.has(r.toLowerCase()));
+    const removed = rwRefs.filter(r => !refDois.has(r.toLowerCase()));
+    return {status: found.length && removed.length ? 'partial' : found.length ? 'still_cited' : 'corrected', found, removed};
+}
+
+function checkRefListFromDois(refDois, rwRefs) {
+    // Same logic as checkRefList but takes a Set of DOIs directly
+    if (!rwRefs?.length) return {status: 'no_rw_refs', found: [], removed: []};
+    if (!refDois?.size) return {status: 'no_refs', found: [], removed: []};
+    const found = rwRefs.filter(r => refDois.has(r.toLowerCase()));
+    const removed = rwRefs.filter(r => !refDois.has(r.toLowerCase()));
+    return {status: found.length && removed.length ? 'partial' : found.length ? 'still_cited' : 'corrected', found, removed};
+}
+
+async function getOpenAlexRefs(doi) {
+    // Fetch references from OpenAlex as fallback when Crossref has none
+    if (!doi) return null;
+    await sleep(100); // OpenAlex is generous but be polite
+    const data = await fetchJson(`https://api.openalex.org/works/doi:${encodeURIComponent(doi)}?mailto=${encodeURIComponent($('userEmail').value)}`);
+    if (!data || !data.referenced_works?.length) return null;
+    
+    // referenced_works are OpenAlex IDs like "https://openalex.org/W2100837269"
+    // We need to resolve them to DOIs - batch fetch
+    const refIds = data.referenced_works.slice(0, 100); // Limit to first 100
+    const refDois = new Set();
+    
+    // OpenAlex supports filter by ID for batch lookup
+    const idList = refIds.map(url => url.replace('https://openalex.org/', '')).join('|');
+    await sleep(100);
+    const refsData = await fetchJson(`https://api.openalex.org/works?filter=openalex_id:${idList}&per_page=100&mailto=${encodeURIComponent($('userEmail').value)}`);
+    
+    if (refsData?.results) {
+        for (const work of refsData.results) {
+            if (work.doi) {
+                // OpenAlex DOIs are full URLs like "https://doi.org/10.1234/..."
+                const doiClean = work.doi.replace('https://doi.org/', '').toLowerCase().trim();
+                if (doiClean) refDois.add(doiClean);
+            }
+        }
+    }
+    
+    return refDois.size > 0 ? refDois : null;
+}
+
+function classifyTimeline(prepDate, pubDate, refs, rwIndex) {
+    const dates = refs.map(r => rwIndex.get(r.toLowerCase())?.date).filter(d => d);
+    if (!dates.length) return {timeline: 'unknown', note: ''};
+    
+    const earliest = dates.sort()[0];
+    const tr = earliest;
+    const pp = prepDate || '';
+    const pd = pubDate || '';
+    
+    // Precision: 10=day (2023-06-15), 7=month (2023-06), 4=year (2023)
+    const trPrec = tr.length;
+    const ppPrec = pp.length;
+    const pdPrec = pd.length;
+    
+    // Helper: compare two dates at minimum precision
+    function compareDates(d1, d1Prec, d2, d2Prec) {
+        if (!d1 || !d2) return {result: 'no_data', note: ''};
+        const minPrec = Math.min(d1Prec, d2Prec);
+        const d1Trunc = d1.slice(0, minPrec);
+        const d2Trunc = d2.slice(0, minPrec);
+        
+        if (d1Trunc === d2Trunc) {
+            // Same at truncated level
+            if (minPrec <= 4) {
+                // Year-only precision, same year → ambiguous
+                return {result: 'same', note: 'ambiguous_year'};
+            } else if (minPrec <= 7) {
+                // Month precision, same month → same timing (not ambiguous, just same)
+                return {result: 'same', note: 'same_month'};
+            } else {
+                // Day precision, same day
+                return {result: 'same', note: 'same_day'};
+            }
+        } else if (d1Trunc < d2Trunc) {
+            return {result: 'before', note: ''};
+        } else {
+            return {result: 'after', note: ''};
+        }
+    }
+    
+    // Compare retraction vs preprint
+    const vsPrepResult = compareDates(tr, trPrec, pp, ppPrec);
+    if (vsPrepResult.note === 'ambiguous_year') {
+        return {timeline: 'ambiguous', note: 'Year-only precision, same year as preprint'};
+    }
+    if (vsPrepResult.result === 'before') {
+        const note = vsPrepResult.note === 'same_month' ? 'Same month as preprint' : '';
+        return {timeline: 'retracted_before_preprint', note};
+    }
+    if (vsPrepResult.result === 'same' && vsPrepResult.note === 'same_month') {
+        // Same month as preprint - can't distinguish, treat as "around preprint time"
+        return {timeline: 'retracted_around_preprint', note: 'Same month as preprint'};
+    }
+    
+    // Compare retraction vs publication
+    const vsPubResult = compareDates(tr, trPrec, pd, pdPrec);
+    if (vsPubResult.note === 'ambiguous_year') {
+        return {timeline: 'ambiguous', note: 'Year-only precision, same year as publication'};
+    }
+    if (vsPubResult.result === 'before') {
+        return {timeline: 'retracted_before_pub', note: ''};
+    }
+    if (vsPubResult.result === 'same' && vsPubResult.note === 'same_month') {
+        return {timeline: 'retracted_around_pub', note: 'Same month as publication'};
+    }
+    if (vsPubResult.result === 'after' || vsPubResult.result === 'same') {
+        return {timeline: 'retracted_after_pub', note: ''};
+    }
+    
+    return {timeline: 'unknown', note: ''};
+}
+
+// ─── Main Processing ────────────────────────────────────────────────────────
+async function processPreprint(row) {
+    // Case-insensitive column access for flexibility
+    const doi = (row.DOI || row.doi || row.Doi || '').toLowerCase().trim();
+    const title = (row.Title || row.title || '').trim();
+    const venue = (row.Venue || row.venue || '').trim();
+    
+    // Parse refs - • separator (may be empty in basic mode)
+    const citedRaw = row['Cited Problematic Papers'] || row['cited_problematic_papers'] || '';
+    const allCited = citedRaw.split(/[•\n]/).map(d => d.trim()).filter(d => d && d.match(/^10\./));
+    const rwConfirmed = allCited.filter(d => state.rwIndex.has(d.toLowerCase()));
+    const ppsOnly = allCited.filter(d => !state.rwIndex.has(d.toLowerCase()));
+    
+    const result = {
+        title, venue, preprint_doi: doi,
+        all_refs: allCited, rw_refs: rwConfirmed, pps_only_refs: ppsOnly,
+        journal_doi: '', source: '', preprint_date: '', pub_date: '', lag_days: '',
+        ref_status: 'not_published', refs_source: '', still_cited: [], corrected: [], timeline: '', timeline_note: '',
+        earliest_retraction: '', journal_fate: '', in_pps: '', 
+        author_overlap: 'no_data', author_overlap_ratio: 0, author_matched: 0,
+        author_prep_count: 0, author_jour_count: 0, author_uncertain: 0, author_note: '',
+        prep_authors: '', journal_authors: '', pubpeer_preprint: '', pubpeer_journal: '',
+        discrepancy: ''
+    };
+    
+    if (!doi && !title) return result;
+    
+    const prepMsg = doi ? await crossrefGet(doi) : null;
+    const prepDate = extractCrossrefDate(prepMsg);
+    result.preprint_date = prepDate;
+    const prepYear = prepDate.slice(0,4);
+    const prepAuthors = extractAuthorsCrossref(prepMsg?.author || []);
+    const firstAuthor = prepAuthors[0]?.last || '';
+    // Extract first author ORCID for Cabanac method
+    const firstAuthorOrcid = (prepMsg?.author?.[0]?.ORCID || '').replace('http://orcid.org/', '').replace('https://orcid.org/', '');
+    
+    // Linking cascade
+    let journalDoi = null, source = null;
+    
+    if (doi?.startsWith('10.1101/')) { journalDoi = await methodA(doi); if (journalDoi) { source = 'A'; state.methodCounts.a++; } }
+    if (!journalDoi && prepMsg) { journalDoi = methodB(prepMsg); if (journalDoi) { source = 'B'; state.methodCounts.b++; } }
+    if (!journalDoi && title) { journalDoi = await methodC(title, prepAuthors, prepYear); if (journalDoi) { source = 'C'; state.methodCounts.c++; } }
+    if (!journalDoi && title) { const {doi: d, confidence: c} = await methodD(title, firstAuthor, prepYear, firstAuthorOrcid); if (d) { journalDoi = d; source = `D-${c}`; state.methodCounts.d++; } }
+    if (!journalDoi && title) { journalDoi = await methodE(title); if (journalDoi) { source = 'E'; state.methodCounts.e++; } }
+    if (!journalDoi && doi) { journalDoi = await methodF(doi); if (journalDoi) { source = 'F'; state.methodCounts.f++; } }
+    
+    if (!journalDoi) return result;
+    
+    result.journal_doi = journalDoi;
+    result.source = source;
+    
+    const journalMsg = await crossrefGet(journalDoi);
+    const pubDate = extractCrossrefDate(journalMsg, true);
+    result.pub_date = pubDate;
+    
+    // Validate: reject if publication year is before preprint year
+    const pubYear = pubDate.slice(0, 4);
+    if (pubYear && prepYear && pubYear < prepYear) {
+        // False positive - publication is before preprint, reject this match
+        result.journal_doi = '';
+        result.source = '';
+        result.pub_date = '';
+        result.ref_status = 'rejected_date';
+        return result;
+    }
+    
+    if (prepDate.length >= 10 && pubDate.length >= 10) {
+        try { result.lag_days = Math.round((new Date(pubDate) - new Date(prepDate)) / 86400000); } catch(e) {}
+    }
+    
+    // Check references - try Crossref first, then OpenAlex as fallback
+    let refResult = checkRefList(journalMsg, rwConfirmed);
+    result.refs_source = 'crossref';
+    
+    // If Crossref has no refs, try OpenAlex
+    if (refResult.status === 'no_refs' && journalDoi) {
+        const openAlexRefs = await getOpenAlexRefs(journalDoi);
+        if (openAlexRefs) {
+            refResult = checkRefListFromDois(openAlexRefs, rwConfirmed);
+            result.refs_source = 'openalex';
+        }
+    }
+    
+    result.ref_status = refResult.status;
+    result.still_cited = refResult.found;
+    result.corrected = refResult.removed;
+    
+    const timelineResult = classifyTimeline(prepDate, pubDate, allCited, state.rwIndex);
+    result.timeline = timelineResult.timeline;
+    result.timeline_note = timelineResult.note;
+    const dates = allCited.map(r => state.rwIndex.get(r.toLowerCase())?.date).filter(d => d);
+    result.earliest_retraction = dates.length ? dates.sort()[0] : '';
+    
+    // Journal fate
+    const rwEntry = state.rwIndex.get(journalDoi.toLowerCase());
+    if (rwEntry) {
+        const nature = (rwEntry.nature||'').toLowerCase();
+        result.journal_fate = nature.includes('retraction') ? 'retracted' : nature.includes('expression of concern') ? 'eoc' : nature.includes('correction') ? 'corrected' : 'ok';
+    }
+    
+    // FoC check
+    result.in_pps = state.ppsIndex.has(journalDoi.toLowerCase()) ? 'yes' : 'no';
+    
+    // Discrepancy analysis
+    const hasProblem = result.ref_status === 'still_cited' || result.ref_status === 'partial';
+    if (result.in_pps === 'yes' && !hasProblem && result.ref_status !== 'no_refs') {
+        result.discrepancy = 'pps_has_other_issues'; // In FoC but refs corrected - FoC flagged for other reasons
+    } else if (result.in_pps === 'no' && hasProblem) {
+        result.discrepancy = 'verify_link'; // Not in FoC but still cites - could be false positive link
+    } else if (result.in_pps === 'yes' && hasProblem) {
+        result.discrepancy = 'match'; // Both agree there's a problem
+    } else if (result.in_pps === 'no' && !hasProblem) {
+        result.discrepancy = 'match'; // Both agree it's OK
+    } else {
+        result.discrepancy = 'unknown';
+    }
+    
+    // Authors
+    if (journalMsg) {
+        const journalAuthors = extractAuthorsCrossref(journalMsg.author || []);
+        const authorResult = authorOverlapCategory(prepAuthors, journalAuthors);
+        result.author_overlap = authorResult.category;
+        result.author_overlap_ratio = authorResult.overlap_ratio;
+        result.author_matched = authorResult.matched_count;
+        result.author_prep_count = authorResult.prep_count;
+        result.author_jour_count = authorResult.jour_count;
+        result.author_uncertain = authorResult.uncertain_matches;
+        result.author_note = authorResult.note;
+        result.prep_authors = prepAuthors.map(a => a.last + (a.initials ? ' ' + a.initials.toUpperCase() : '')).join('; ');
+        result.journal_authors = journalAuthors.map(a => a.last + (a.initials ? ' ' + a.initials.toUpperCase() : '')).join('; ');
+    }
+    
+    if (state.pubpeerIndex.has(doi.toLowerCase())) result.pubpeer_preprint = 'yes';
+    if (state.pubpeerIndex.has(journalDoi.toLowerCase())) result.pubpeer_journal = 'yes';
+    
+    return result;
+}
+
+// ─── UI ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+    const total = state.preprints.length;
+    const processed = state.results.length;
+    const published = state.results.filter(r => r.journal_doi);
+    const pubCount = published.length;
+    
+    // Helper to format count with percentage
+    const fmt = (count, base) => {
+        if (!base) return `${count}`;
+        const pct = (count / base * 100).toFixed(0);
+        return `${count} <span class="stat-pct">(${pct}%)</span>`;
+    };
+    
+    $('statProcessed').innerHTML = processed;
+    $('statPublished').innerHTML = fmt(pubCount, processed);
+    $('statNotPublished').innerHTML = fmt(state.results.filter(r => !r.journal_doi).length, processed);
+    
+    // Ref status (% of published)
+    $('statStillCited').innerHTML = fmt(state.results.filter(r => r.ref_status === 'still_cited').length, pubCount);
+    $('statPartial').innerHTML = fmt(state.results.filter(r => r.ref_status === 'partial').length, pubCount);
+    $('statCorrected').innerHTML = fmt(state.results.filter(r => r.ref_status === 'corrected').length, pubCount);
+    $('statNoRefs').innerHTML = fmt(state.results.filter(r => r.ref_status === 'no_refs' || r.ref_status === 'no_rw_refs').length, pubCount);
+    $('statOpenAlex').innerHTML = fmt(state.results.filter(r => r.refs_source === 'openalex').length, pubCount);
+    
+    // FoC cross-check (% of published)
+    $('statInPPS').innerHTML = fmt(state.results.filter(r => r.in_pps === 'yes').length, pubCount);
+    $('statNotInPPS').innerHTML = fmt(state.results.filter(r => r.journal_doi && r.in_pps === 'no').length, pubCount);
+    $('statDiscMatch').innerHTML = fmt(state.results.filter(r => r.discrepancy === 'match').length, pubCount);
+    $('statDiscMismatch').innerHTML = fmt(state.results.filter(r => r.discrepancy === 'pps_has_other_issues' || r.discrepancy === 'verify_link').length, pubCount);
+    
+    // Author overlap (% of published)
+    $('statAuthorSame').innerHTML = fmt(state.results.filter(r => r.author_overlap === 'same').length, pubCount);
+    $('statAuthorAdded').innerHTML = fmt(state.results.filter(r => r.author_overlap === 'added').length, pubCount);
+    $('statAuthorChanged').innerHTML = fmt(state.results.filter(r => r.author_overlap === 'changed' || r.author_overlap === 'removed').length, pubCount);
+    $('statAuthorNoOverlap').innerHTML = fmt(state.results.filter(r => r.author_overlap === 'no_overlap').length, pubCount);
+    $('statAuthorUncertain').innerHTML = fmt(state.results.filter(r => r.author_uncertain > 0).length, pubCount);
+    
+    // Timeline (% of published)
+    $('statTimelineBeforePrep').innerHTML = fmt(state.results.filter(r => r.timeline === 'retracted_before_preprint' || r.timeline === 'retracted_around_preprint').length, pubCount);
+    $('statTimelineBetween').innerHTML = fmt(state.results.filter(r => r.timeline === 'retracted_before_pub' || r.timeline === 'retracted_around_pub').length, pubCount);
+    $('statTimelineAfterPub').innerHTML = fmt(state.results.filter(r => r.timeline === 'retracted_after_pub').length, pubCount);
+    $('statTimelineAmbiguous').innerHTML = fmt(state.results.filter(r => r.timeline === 'ambiguous').length, pubCount);
+    $('statTimelineSameMonth').innerHTML = fmt(state.results.filter(r => r.timeline_note && r.timeline_note.includes('Same month')).length, pubCount);
+    
+    // Methods (% of published) - count from results to reflect date rejections
+    $('methodA').innerHTML = fmt(state.results.filter(r => r.source === 'A').length, pubCount);
+    $('methodB').innerHTML = fmt(state.results.filter(r => r.source === 'B').length, pubCount);
+    $('methodC').innerHTML = fmt(state.results.filter(r => r.source === 'C').length, pubCount);
+    $('methodD').innerHTML = fmt(state.results.filter(r => r.source?.startsWith('D')).length, pubCount);
+    $('methodE').innerHTML = fmt(state.results.filter(r => r.source === 'E').length, pubCount);
+    $('methodF').innerHTML = fmt(state.results.filter(r => r.source === 'F').length, pubCount);
+    
+    const pct = total ? (processed / total * 100).toFixed(1) : 0;
+    $('progressFill').style.width = `${pct}%`;
+    $('progressText').textContent = `${processed} / ${total} (${pct}%)`;
+}
+
+function renderDoiList(refs, ppsOnlyRefs) {
+    if (!refs?.length) return '-';
+    const id = 'doi-' + Math.random().toString(36).slice(2);
+    const ppsSet = new Set((ppsOnlyRefs||[]).map(d => d.toLowerCase()));
+    const items = refs.slice(0, 5).map(d => {
+        const isPpsOnly = ppsSet.has(d.toLowerCase());
+        return `<div class="doi-item"><a class="doi-link" href="https://doi.org/${d}" target="_blank">${d}</a>${isPpsOnly ? '<span class="badge badge-pps" title="In Feet of Clay but not in Retraction Watch">FoC</span>' : ''}</div>`;
+    }).join('');
+    const more = refs.length > 5 ? `<div class="doi-item" style="color:var(--gray-500)">+${refs.length - 5} more...</div>` : '';
+    return `<button class="expand-btn" onclick="toggleDois('${id}')">${refs.length} refs ▼</button><div class="doi-list" id="${id}">${items}${more}</div>`;
+}
+
+window.toggleDois = function(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('expanded');
+};
+
+function addResultRow(r, idx) {
+    const tr = document.createElement('tr');
+    tr.dataset.index = idx;
+    
+    const methodBadges = {
+        'A': '<span class="badge badge-a" title="bioRxiv/medRxiv API — Ground truth">A</span>',
+        'B': '<span class="badge badge-b" title="Crossref relations — Ground truth">B</span>',
+        'C': '<span class="badge badge-c" title="PubMed/Pre2Pub — High reliability">C</span>',
+        'D-high': '<span class="badge badge-d" title="Cabanac — Title ≥80% similarity">D-hi</span>',
+        'D-low': '<span class="badge badge-d" title="Cabanac — Title 25-80% + author match. Verify!">D-lo</span>',
+        'E': '<span class="badge badge-e" title="Title-only fallback — Verify ALL!">E</span>',
+        'F': '<span class="badge badge-f" title="Europe PMC curated links">F</span>'
+    };
+    
+    const refBadges = {
+        'still_cited': '<span class="badge badge-danger" title="All retracted refs still cited">Still</span>',
+        'partial': '<span class="badge badge-warning" title="Some refs removed, some remain">Partial</span>',
+        'corrected': '<span class="badge badge-success" title="All RW refs removed">Fixed</span>',
+        'no_refs': '<span class="badge badge-gray" title="No refs in Crossref">NoRefs</span>',
+        'no_rw_refs': '<span class="badge badge-gray" title="No RW-confirmed refs">NoRW</span>',
+        'not_published': '<span class="badge badge-gray">-</span>'
+    };
+    
+    const timelineBadges = {
+        'retracted_before_preprint': '<span class="badge badge-danger" title="Ref was retracted BEFORE preprint posted">Pre-prep</span>',
+        'retracted_around_preprint': '<span class="badge badge-danger" title="Ref retracted same month as preprint (month-level precision)">~Prep</span>',
+        'retracted_before_pub': '<span class="badge badge-warning" title="Ref retracted between preprint posting and journal publication">Between</span>',
+        'retracted_around_pub': '<span class="badge badge-warning" title="Ref retracted same month as publication (month-level precision)">~Pub</span>',
+        'retracted_after_pub': '<span class="badge badge-gray" title="Ref retracted after journal publication">Post-pub</span>',
+        'ambiguous': '<span class="badge badge-e" title="Year-only precision, same year — cannot determine timing">Ambig</span>',
+        'unknown': '<span class="badge badge-gray">?</span>'
+    };
+    
+    // Add same-month indicator if applicable
+    let timelineBadge = timelineBadges[r.timeline] || '';
+    if (r.timeline_note && r.timeline_note.includes('Same month')) {
+        timelineBadge += ' <span class="badge badge-gray" title="' + r.timeline_note + '">~mo</span>';
+    }
+    
+    const authorBadges = {
+        'same': '<span class="badge badge-success">Same</span>',
+        'added': '<span class="badge badge-success" title="Authors added">+Added</span>',
+        'removed': '<span class="badge badge-warning" title="Authors removed">-Removed</span>',
+        'changed': '<span class="badge badge-warning" title="Authors added AND removed">Changed</span>',
+        'no_overlap': '<span class="badge badge-danger" title="ZERO authors in common! Verify link!">⚠ None</span>',
+        'no_data': '<span class="badge badge-gray">-</span>'
+    };
+    
+    // Build author badge with quantitative info
+    let authorBadge = authorBadges[r.author_overlap] || '';
+    if (r.journal_doi && r.author_overlap !== 'no_data') {
+        // Add ratio and counts
+        const ratioColor = r.author_overlap_ratio >= 80 ? 'badge-success' : r.author_overlap_ratio >= 50 ? 'badge-warning' : 'badge-danger';
+        const tooltipParts = [`${r.author_matched}/${r.author_prep_count} preprint authors found`, `${r.author_jour_count} in journal`];
+        if (r.author_note) tooltipParts.push(r.author_note);
+        authorBadge += ` <span class="badge ${ratioColor}" title="${tooltipParts.join('\n')}">${r.author_overlap_ratio}%</span>`;
+        if (r.author_uncertain > 0) {
+            authorBadge += ` <span class="badge badge-gray" title="${r.author_uncertain} matched by last name only (no initials to compare)">?${r.author_uncertain}</span>`;
+        }
+    }
+    
+    let ppsCheck = '-';
+    if (r.journal_doi) {
+        if (r.discrepancy === 'match') ppsCheck = r.in_pps === 'yes' ? '<span class="badge badge-warning">In FoC ✓</span>' : '<span class="badge badge-success">Not in FoC ✓</span>';
+        else if (r.discrepancy === 'pps_has_other_issues') ppsCheck = '<span class="badge badge-warning" title="In FoC but refs fixed — may have other issues">FoC: other issues?</span>';
+        else if (r.discrepancy === 'verify_link') ppsCheck = '<span class="badge badge-danger" title="Still cites refs but not in FoC — verify link or new addition">⚠ Verify link</span>';
+        else ppsCheck = r.in_pps === 'yes' ? '<span class="badge badge-warning">In FoC</span>' : '<span class="badge badge-gray">Not in FoC</span>';
+    }
+    
+    tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td><a class="doi-link" href="https://doi.org/${r.preprint_doi}" target="_blank">${r.preprint_doi || '-'}</a></td>
+        <td class="truncate" title="${r.title}">${r.title?.slice(0,35) || '-'}${r.title?.length > 35 ? '...' : ''}</td>
+        <td>${renderDoiList(r.all_refs, r.pps_only_refs)}</td>
+        <td>${r.journal_doi ? `<a class="doi-link" href="https://doi.org/${r.journal_doi}" target="_blank">${r.journal_doi}</a>` : '-'}</td>
+        <td>${methodBadges[r.source] || '<span class="badge badge-gray">-</span>'}</td>
+        <td>${refBadges[r.ref_status] || ''}</td>
+        <td>${timelineBadge}</td>
+        <td>${authorBadge}</td>
+        <td>${ppsCheck}</td>
+        <td>${r.lag_days || '-'}</td>
+    `;
+    $('resultsBody').appendChild(tr);
+}
+
+function applyFilter(filterType) {
+    state.currentFilter = filterType;
+    const rows = $('resultsBody').querySelectorAll('tr');
+    let count = 0;
+    
+    rows.forEach(tr => {
+        const idx = parseInt(tr.dataset.index);
+        const r = state.results[idx];
+        let show = true;
+        
+        switch(filterType) {
+            case 'published': show = !!r.journal_doi; break;
+            case 'not_published': show = !r.journal_doi; break;
+            case 'still_cited': show = r.ref_status === 'still_cited'; break;
+            case 'partial': show = r.ref_status === 'partial'; break;
+            case 'corrected': show = r.ref_status === 'corrected'; break;
+            case 'no_refs': show = r.ref_status === 'no_refs' || r.ref_status === 'no_rw_refs'; break;
+            case 'refs_openalex': show = r.refs_source === 'openalex'; break;
+            case 'in_pps_yes': show = r.in_pps === 'yes'; break;
+            case 'in_pps_no': show = r.journal_doi && r.in_pps === 'no'; break;
+            case 'disc_match': show = r.discrepancy === 'match'; break;
+            case 'disc_mismatch': show = r.discrepancy === 'pps_has_other_issues' || r.discrepancy === 'verify_link'; break;
+            case 'author_same': show = r.author_overlap === 'same'; break;
+            case 'author_added': show = r.author_overlap === 'added'; break;
+            case 'author_changed': show = r.author_overlap === 'changed' || r.author_overlap === 'removed'; break;
+            case 'author_no_overlap': show = r.author_overlap === 'no_overlap'; break;
+            case 'author_uncertain': show = r.author_uncertain > 0; break;
+            case 'timeline_before_prep': show = r.timeline === 'retracted_before_preprint' || r.timeline === 'retracted_around_preprint'; break;
+            case 'timeline_between': show = r.timeline === 'retracted_before_pub' || r.timeline === 'retracted_around_pub'; break;
+            case 'timeline_after_pub': show = r.timeline === 'retracted_after_pub'; break;
+            case 'timeline_ambiguous': show = r.timeline === 'ambiguous'; break;
+            case 'timeline_same_month': show = r.timeline_note && r.timeline_note.includes('Same month'); break;
+            case 'method_a': show = r.source === 'A'; break;
+            case 'method_b': show = r.source === 'B'; break;
+            case 'method_c': show = r.source === 'C'; break;
+            case 'method_d': show = r.source?.startsWith('D'); break;
+            case 'method_e': show = r.source === 'E'; break;
+            case 'method_f': show = r.source === 'F'; break;
+            default: show = true;
+        }
+        
+        tr.classList.toggle('hidden-row', !show);
+        if (show) count++;
+    });
+    
+    // Update filter indicator
+    const labels = {
+        'published': 'Published found', 'not_published': 'Not published', 'still_cited': 'Still cited',
+        'partial': 'Partial correction', 'corrected': 'Corrected', 'no_refs': 'No refs data',
+        'refs_openalex': 'Refs via OpenAlex',
+        'in_pps_yes': 'In FoC', 'in_pps_no': 'Not in FoC', 'disc_match': 'FoC match',
+        'disc_mismatch': 'FoC mismatch', 'author_same': 'Same authors', 'author_added': 'Authors added',
+        'author_changed': 'Authors changed', 'author_no_overlap': 'No author overlap',
+        'author_uncertain': 'Uncertain author matches',
+        'timeline_before_prep': 'Retracted before preprint', 'timeline_between': 'Retracted between prep & pub',
+        'timeline_after_pub': 'Retracted after publication', 'timeline_ambiguous': 'Timeline ambiguous (year-only)',
+        'timeline_same_month': 'Same month (imprecise)',
+        'method_a': 'Method A (bioRxiv)', 'method_b': 'Method B (Crossref)', 'method_c': 'Method C (PubMed)',
+        'method_d': 'Method D (Cabanac)', 'method_e': 'Method E (Title-only)', 'method_f': 'Method F (Europe PMC)'
+    };
+    
+    $('filterIndicator').classList.toggle('hidden', !filterType);
+    $('filterLabel').textContent = labels[filterType] || filterType;
+    $('filterCount').textContent = count;
+    
+    // Update active states
+    document.querySelectorAll('.stat-box, .method-box').forEach(el => el.classList.remove('active'));
+    if (filterType) {
+        const activeEl = document.querySelector(`[data-filter="${filterType}"]`);
+        if (activeEl) activeEl.classList.add('active');
+    }
+}
+
+function clearFilter() {
+    state.currentFilter = null;
+    $('resultsBody').querySelectorAll('tr').forEach(tr => tr.classList.remove('hidden-row'));
+    $('filterIndicator').classList.add('hidden');
+    document.querySelectorAll('.stat-box, .method-box').forEach(el => el.classList.remove('active'));
+}
+
+async function runBatch() {
+    const batchSize = parseInt($('batchSize').value) || 25;
+    const endIdx = Math.min(state.currentIndex + batchSize, state.preprints.length);
+    
+    state.isRunning = true; state.shouldStop = false;
+    $('runBtn').disabled = true; $('nextBatchBtn').disabled = true; $('stopBtn').disabled = false;
+    
+    log(`Batch ${state.currentIndex + 1} to ${endIdx}`, 'info');
+    
+    for (let i = state.currentIndex; i < endIdx && !state.shouldStop; i++) {
+        const row = state.preprints[i];
+        try {
+            log(`[${i+1}/${state.preprints.length}] ${row.DOI || row.Title?.slice(0,40)}...`);
+            const result = await processPreprint(row);
+            state.results.push(result);
+            addResultRow(result, state.results.length - 1);
+            if (result.journal_doi) {
+                log(`  → ${result.source}: ${result.journal_doi} [${result.ref_status}]`, result.ref_status === 'corrected' ? 'success' : result.ref_status === 'still_cited' ? 'warn' : 'info');
+                if (result.author_overlap === 'no_overlap') log(`  ⚠ No author overlap — verify link!`, 'error');
+                if (result.discrepancy === 'verify_link') log(`  ⚠ Not in FoC but still cites — verify link`, 'warn');
+            }
+        } catch(e) { log(`Error: ${e.message}`, 'error'); state.results.push({preprint_doi: row.DOI||'', title: row.Title||'', ref_status: 'error', all_refs: [], rw_refs: [], pps_only_refs: []}); }
+        state.currentIndex = i + 1;
+        updateStats();
+        if (state.currentFilter) applyFilter(state.currentFilter);
+    }
+    
+    state.isRunning = false;
+    $('stopBtn').disabled = true; $('saveBtn').disabled = false;
+    $('exportCsvBtn').disabled = !state.results.length;
+    $('exportFilteredBtn').disabled = !state.results.length;
+    $('exportReportBtn').disabled = !state.results.length;
+    
+    if (state.currentIndex < state.preprints.length) {
+        $('nextBatchBtn').disabled = false;
+        log(`Done. ${state.preprints.length - state.currentIndex} remaining.`, 'success');
+    } else log('All done!', 'success');
+}
+
+function exportCSV(filtered = false) {
+    const headers = ['title','venue','preprint_doi','all_refs','rw_refs','foc_only_refs','journal_doi','source','preprint_date','pub_date','lag_days','ref_status','refs_source','still_cited','corrected','timeline','timeline_note','earliest_retraction','journal_fate','in_foc','discrepancy','author_overlap','author_overlap_ratio','author_matched','author_prep_count','author_jour_count','author_uncertain','author_note','prep_authors','journal_authors','pubpeer_preprint','pubpeer_journal'];
+    // Map internal field names to CSV names
+    const fieldMap = {'foc_only_refs': 'pps_only_refs', 'in_foc': 'in_pps'};
+    let data = state.results;
+    if (filtered && state.currentFilter) {
+        const visibleIndices = new Set([...$('resultsBody').querySelectorAll('tr:not(.hidden-row)')].map(tr => parseInt(tr.dataset.index)));
+        data = state.results.filter((_, i) => visibleIndices.has(i));
+    }
+    const csv = [headers.join(','), ...data.map(r => headers.map(h => {
+        const field = fieldMap[h] || h;
+        let v = r[field];
+        if (Array.isArray(v)) v = v.join('; ');
+        v = String(v || '');
+        return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v;
+    }).join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+    a.download = `pre2pub_${filtered ? 'filtered_' : ''}${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    log(`Exported ${data.length} rows`, 'success');
+}
+
+function exportReport() {
+    const t = state.results.length, p = state.results.filter(r => r.journal_doi).length;
+    const report = `Pre2Pub Retraction Tracker Report
+Generated: ${new Date().toISOString()}
+${'='.repeat(50)}
+
+OVERVIEW
+--------
+Total preprints analyzed: ${t}
+Journal publications found: ${p} (${(p/t*100).toFixed(1)}%)
+Not published / not found: ${t - p}
+
+REFERENCE STATUS (of ${p} published)
+------------------------------------
+Still citing retracted refs: ${state.results.filter(r => r.ref_status === 'still_cited').length}
+Partially corrected: ${state.results.filter(r => r.ref_status === 'partial').length}
+Fully corrected: ${state.results.filter(r => r.ref_status === 'corrected').length}
+No refs data in Crossref: ${state.results.filter(r => r.ref_status === 'no_refs').length}
+
+LINKING METHODS
+---------------
+A (bioRxiv API - ground truth): ${state.results.filter(r => r.source === 'A').length}
+B (Crossref relations - ground truth): ${state.results.filter(r => r.source === 'B').length}
+C (PubMed/Pre2Pub - high reliability): ${state.results.filter(r => r.source === 'C').length}
+D (Cabanac - verify low confidence): ${state.results.filter(r => r.source?.startsWith('D')).length}
+E (Title-only - verify ALL): ${state.results.filter(r => r.source === 'E').length}
+F (Europe PMC - curated links): ${state.results.filter(r => r.source === 'F').length}
+Date-rejected (pub year < prep year): ${state.results.filter(r => r.ref_status === 'rejected_date').length}
+
+FEET OF CLAY CROSS-CHECK
+------------------------
+In FoC (still has problems): ${state.results.filter(r => r.in_pps === 'yes').length}
+Not in FoC: ${state.results.filter(r => r.journal_doi && r.in_pps === 'no').length}
+Discrepancies to investigate: ${state.results.filter(r => r.discrepancy === 'pps_has_other_issues' || r.discrepancy === 'verify_link').length}
+
+AUTHOR OVERLAP
+--------------
+Same authors: ${state.results.filter(r => r.author_overlap === 'same').length}
+Authors added: ${state.results.filter(r => r.author_overlap === 'added').length}
+Authors changed/removed: ${state.results.filter(r => r.author_overlap === 'changed' || r.author_overlap === 'removed').length}
+NO OVERLAP (verify!): ${state.results.filter(r => r.author_overlap === 'no_overlap').length}
+
+TIMELINE
+--------
+Retracted before preprint: ${state.results.filter(r => r.timeline === 'retracted_before_preprint').length}
+Retracted during peer review: ${state.results.filter(r => r.timeline === 'retracted_before_pub').length}
+Retracted after publication: ${state.results.filter(r => r.timeline === 'retracted_after_pub').length}
+
+${'='.repeat(50)}
+Items requiring manual verification:
+- All Method E (title-only) matches
+- Method D-low matches
+- No author overlap cases
+- FoC discrepancy cases
+`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([report], {type: 'text/plain'}));
+    a.download = `pre2pub_report_${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+}
+
+function saveProgress() {
+    const data = {timestamp: new Date().toISOString(), currentIndex: state.currentIndex, results: state.results, methodCounts: state.methodCounts};
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: 'application/json'}));
+    a.download = `pre2pub_progress_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    log('Progress saved', 'success');
+}
+
+function loadProgress(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            state.currentIndex = data.currentIndex || 0;
+            state.results = data.results || [];
+            state.methodCounts = data.methodCounts || {a:0,b:0,c:0,d:0,e:0};
+            $('resultsBody').innerHTML = '';
+            state.results.forEach((r, i) => addResultRow(r, i));
+            updateStats();
+            $('saveBtn').disabled = false;
+            $('exportCsvBtn').disabled = !state.results.length;
+            $('exportFilteredBtn').disabled = !state.results.length;
+            $('exportReportBtn').disabled = !state.results.length;
+            if (state.preprints.length && state.currentIndex < state.preprints.length) $('nextBatchBtn').disabled = false;
+            log(`Loaded ${state.results.length} results, resume from ${state.currentIndex + 1}`, 'success');
+        } catch(err) { log(`Error: ${err.message}`, 'error'); }
+    };
+    reader.readAsText(file);
+}
+
+// ─── Event Handlers ─────────────────────────────────────────────────────────
+$('preprintsFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        state.preprints = parseCSV(ev.target.result);
+        if (state.preprints.length) {
+            $('preprintsStatus').textContent = `✓ ${state.preprints.length.toLocaleString()} preprints`;
+            $('preprintsStatus').className = 'file-status loaded';
+            $('runBtn').disabled = false;
+            log(`Loaded ${state.preprints.length} preprints`, 'success');
+        } else {
+            $('preprintsStatus').textContent = 'Error parsing CSV';
+            $('preprintsStatus').className = 'file-status error';
+        }
+    };
+    reader.readAsText(file);
+});
+
+$('ppsFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const rows = parseCSV(ev.target.result);
+        state.ppsIndex = new Map();
+        for (const r of rows) { const doi = (r.DOI||'').toLowerCase().trim(); if (doi) state.ppsIndex.set(doi, r); }
+        $('ppsStatus').textContent = `✓ ${state.ppsIndex.size.toLocaleString()} articles`;
+        $('ppsStatus').className = 'file-status loaded';
+        log(`Indexed ${state.ppsIndex.size} Feet of Clay articles`, 'success');
+    };
+    reader.readAsText(file);
+});
+
+$('rwFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const rows = parseCSV(ev.target.result);
+        state.rwIndex = new Map();
+        for (const r of rows) {
+            const doi = (r.OriginalPaperDOI||'').toLowerCase().trim(); if (!doi) continue;
+            const date = parseRwDate(r.RetractionDate||'');
+            if (!state.rwIndex.has(doi) || (date && date < state.rwIndex.get(doi).date)) {
+                state.rwIndex.set(doi, {date, nature: r.RetractionNature||'', reason: r.Reason||''});
+            }
+        }
+        $('rwStatus').textContent = `✓ ${state.rwIndex.size.toLocaleString()} retractions`;
+        $('rwStatus').className = 'file-status loaded';
+        log(`Indexed ${state.rwIndex.size} RW records`, 'success');
+    };
+    reader.readAsText(file);
+});
+
+$('pubpeerFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const rows = parseCSV(ev.target.result);
+        state.pubpeerIndex = new Map();
+        for (const r of rows) { const doi = (r.doi||r.DOI||'').toLowerCase().trim(); if (doi) state.pubpeerIndex.set(doi, r); }
+        $('pubpeerStatus').textContent = `✓ ${state.pubpeerIndex.size.toLocaleString()} records`;
+        $('pubpeerStatus').className = 'file-status loaded';
+        log(`Loaded ${state.pubpeerIndex.size} PubPeer records`, 'success');
+    };
+    reader.readAsText(file);
+});
+
+// Single DOI checker
+async function checkSingleDoi() {
+    const doiInput = $('singleDoi').value.trim();
+    if (!doiInput) { alert('Please enter a DOI'); return; }
+    
+    // Normalize DOI - remove URL prefix if present
+    const doi = doiInput.replace(/^https?:\/\/doi\.org\//i, '').toLowerCase();
+    
+    const output = $('singleDoiOutput');
+    const resultDiv = $('singleDoiResult');
+    resultDiv.style.display = 'block';
+    output.innerHTML = '<em>Checking...</em>';
+    
+    try {
+        // Get preprint metadata
+        output.innerHTML = '<em>Fetching preprint metadata from Crossref...</em>';
+        const prepMsg = await crossrefGet(doi);
+        if (!prepMsg) {
+            output.innerHTML = `<span style="color:var(--danger)">❌ DOI not found in Crossref: ${doi}</span>`;
+            return;
+        }
+        
+        const title = (prepMsg.title||[''])[0];
+        const prepDate = extractCrossrefDate(prepMsg);
+        const prepYear = prepDate.slice(0, 4);
+        const prepAuthors = extractAuthorsCrossref(prepMsg.author || []);
+        const firstAuthor = prepAuthors[0]?.last || '';
+        const firstAuthorOrcid = prepAuthors[0]?.orcid || '';
+        
+        let html = `<strong>Preprint:</strong> ${title.slice(0, 80)}${title.length > 80 ? '...' : ''}<br>`;
+        html += `<strong>Date:</strong> ${prepDate || 'unknown'} | <strong>Authors:</strong> ${prepAuthors.length} | <strong>First:</strong> ${firstAuthor}<br><br>`;
+        output.innerHTML = html + '<em>Searching for publication (Methods A→F)...</em>';
+        
+        // Run linking cascade
+        let journalDoi = null, source = null;
+        
+        if (doi.startsWith('10.1101/')) {
+            output.innerHTML = html + '<em>Method A: Checking bioRxiv API...</em>';
+            journalDoi = await methodA(doi);
+            if (journalDoi) source = 'A';
+        }
+        
+        if (!journalDoi && prepMsg) {
+            output.innerHTML = html + '<em>Method B: Checking Crossref relations...</em>';
+            journalDoi = methodB(prepMsg);
+            if (journalDoi) source = 'B';
+        }
+        
+        if (!journalDoi && title) {
+            output.innerHTML = html + '<em>Method C: Searching PubMed...</em>';
+            journalDoi = await methodC(title, prepAuthors, prepYear);
+            if (journalDoi) source = 'C';
+        }
+        
+        if (!journalDoi && title) {
+            output.innerHTML = html + '<em>Method D: Searching Crossref (Cabanac)...</em>';
+            const {doi: d, confidence: c} = await methodD(title, firstAuthor, prepYear, firstAuthorOrcid);
+            if (d) { journalDoi = d; source = `D-${c}`; }
+        }
+        
+        if (!journalDoi && title) {
+            output.innerHTML = html + '<em>Method E: Title-only search...</em>';
+            journalDoi = await methodE(title);
+            if (journalDoi) source = 'E';
+        }
+        
+        if (!journalDoi && doi) {
+            output.innerHTML = html + '<em>Method F: Checking Europe PMC...</em>';
+            journalDoi = await methodF(doi);
+            if (journalDoi) source = 'F';
+        }
+        
+        if (!journalDoi) {
+            output.innerHTML = html + `<span style="color:var(--warning)">⚠️ No publication found via any method (A-F)</span>`;
+            return;
+        }
+        
+        // Get publication metadata
+        output.innerHTML = html + '<em>Fetching publication metadata...</em>';
+        const journalMsg = await crossrefGet(journalDoi);
+        const pubDate = extractCrossrefDate(journalMsg, true);
+        const pubYear = pubDate.slice(0, 4);
+        
+        // Year validation
+        if (pubYear && prepYear && pubYear < prepYear) {
+            html += `<span style="color:var(--danger)">❌ REJECTED: Publication (${pubYear}) is before preprint (${prepYear})</span><br>`;
+            html += `<strong>Matched DOI:</strong> <a href="https://doi.org/${journalDoi}" target="_blank">${journalDoi}</a> via Method ${source}`;
+            output.innerHTML = html;
+            return;
+        }
+        
+        const journalAuthors = extractAuthorsCrossref(journalMsg?.author || []);
+        const authorOverlap = authorOverlapCategory(prepAuthors, journalAuthors);
+        
+        let lagDays = '';
+        if (prepDate.length >= 10 && pubDate.length >= 10) {
+            try { lagDays = Math.round((new Date(pubDate) - new Date(prepDate)) / 86400000); } catch(e) {}
+        }
+        
+        html += `<span style="color:var(--success)">✓ Publication found via Method ${source}</span><br>`;
+        html += `<strong>Journal DOI:</strong> <a href="https://doi.org/${journalDoi}" target="_blank">${journalDoi}</a><br>`;
+        html += `<strong>Pub Date:</strong> ${pubDate || 'unknown'}`;
+        if (lagDays !== '') html += ` (${lagDays} days after preprint)`;
+        html += `<br>`;
+        html += `<strong>Authors:</strong> ${authorOverlap.category} (${authorOverlap.overlap_ratio}% overlap, ${authorOverlap.matched_count}/${Math.max(authorOverlap.prep_count, authorOverlap.jour_count)} matched)`;
+        if (authorOverlap.uncertain_matches > 0) html += ` <span style="color:var(--purple)">⚠ ${authorOverlap.uncertain_matches} uncertain</span>`;
+        html += `<br>`;
+        
+        // Check refs if RW index loaded
+        if (state.rwIndex?.size > 0) {
+            const refs = journalMsg?.reference || [];
+            const refDois = new Set(refs.map(r => (r.DOI||'').toLowerCase()).filter(d => d));
+            const rwRefs = [...refDois].filter(d => state.rwIndex.has(d));
+            if (rwRefs.length > 0) {
+                html += `<strong style="color:var(--danger)">⚠ Cites ${rwRefs.length} retracted ref(s):</strong> ${rwRefs.join(', ')}<br>`;
+            } else if (refDois.size > 0) {
+                html += `<strong style="color:var(--success)">✓ No retracted refs found</strong> (checked ${refDois.size} refs)<br>`;
+            } else {
+                html += `<em>No reference list in Crossref</em><br>`;
+            }
+        } else {
+            html += `<em>(Load Retraction Watch CSV to check refs)</em><br>`;
+        }
+        
+        output.innerHTML = html;
+        
+    } catch (err) {
+        output.innerHTML = `<span style="color:var(--danger)">❌ Error: ${err.message}</span>`;
+    }
+}
+
+$('checkDoiBtn').addEventListener('click', checkSingleDoi);
+$('singleDoi').addEventListener('keypress', e => { if (e.key === 'Enter') checkSingleDoi(); });
+
+$('runBtn').addEventListener('click', () => {
+    state.currentIndex = 0; state.results = []; state.methodCounts = {a:0,b:0,c:0,d:0,e:0,f:0};
+    $('resultsBody').innerHTML = '';
+    clearFilter();
+    runBatch();
+});
+$('nextBatchBtn').addEventListener('click', runBatch);
+$('stopBtn').addEventListener('click', () => { state.shouldStop = true; log('Stopping...', 'warn'); });
+$('saveBtn').addEventListener('click', saveProgress);
+$('loadBtn').addEventListener('click', () => $('progressFile').click());
+$('progressFile').addEventListener('change', e => { if (e.target.files[0]) loadProgress(e.target.files[0]); });
+$('exportCsvBtn').addEventListener('click', () => exportCSV(false));
+$('exportFilteredBtn').addEventListener('click', () => exportCSV(true));
+$('exportReportBtn').addEventListener('click', exportReport);
+$('clearFilter').addEventListener('click', clearFilter);
+
+// Clickable stats and methods
+document.querySelectorAll('.stat-box[data-filter], .method-box[data-filter]').forEach(el => {
+    el.addEventListener('click', () => {
+        const filter = el.dataset.filter;
+        if (state.currentFilter === filter) clearFilter();
+        else applyFilter(filter);
+    });
+});
+
+updateStats();
+</script>
+</body>
+</html>
